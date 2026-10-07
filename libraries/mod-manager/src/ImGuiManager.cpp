@@ -1,12 +1,13 @@
 #include <Windows.h>
 #include <d3d11.h>
 
-#include "vendor/imgui.hpp"
+#include <vendor/imgui.hpp>
 
-#include "core/Pointer.hpp"
-#include "core/Path.hpp"
-#include "core/Logger.hpp"
-#include "core/Patch.hpp"
+#include <core/Pointer.hpp>
+#include <core/Path.hpp>
+#include <core/Logger.hpp>
+#include <core/Patch.hpp>
+
 #include "mod-manager/ModManager.hpp"
 #include "mod-manager/ModManagerConfigFile.hpp"
 #include "mod-manager/ImGuiManager.hpp"
@@ -17,30 +18,6 @@
 
 IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-
-// Rewrites a pending move/resize of a borderless (no caption, no sizing frame) window so it
-// covers its whole monitor. Windowed mode and minimizing are left alone.
-static void FitBorderlessWindowToMonitor(HWND hWnd, WINDOWPOS* windowPos)
-{
-    LONG style = GetWindowLongA(hWnd, GWL_STYLE);
-    if ((style & (WS_CAPTION | WS_THICKFRAME)) != 0 || IsIconic(hWnd) || windowPos->x <= -32000)
-    {
-        return;
-    }
-
-    MONITORINFO monitorInfo = { sizeof(monitorInfo) };
-    if (!GetMonitorInfoA(MonitorFromWindow(hWnd, MONITOR_DEFAULTTONEAREST), &monitorInfo))
-    {
-        return;
-    }
-
-    const RECT& monitor = monitorInfo.rcMonitor;
-    windowPos->x = monitor.left;
-    windowPos->y = monitor.top;
-    windowPos->cx = monitor.right - monitor.left;
-    windowPos->cy = monitor.bottom - monitor.top;
-    windowPos->flags &= ~(SWP_NOMOVE | SWP_NOSIZE);
-}
 
 ImGuiManager::ImGuiManager(ModManagerConfigFile::ImGuiConfig& imguiConfig, Core::Path configDirectoryPath, const Core::Logger& logger)
     :
@@ -102,13 +79,6 @@ void ImGuiManager::Load()
     Core::Patch(0x0817E440, 6, m_Logger).WriteJMP(Hook_Render);
     Core::Patch(0x008FB9D9, 5, m_Logger).WriteJMP(Hook_WindowProc);
     Core::Patch(0x0664BB29, 8, m_Logger).WriteJMP(Hook_CaptureKeyboard);
-
-    m_Logger.Info(
-        "Loaded ImGui manager. window handle: 0x%08X, D3D11 device: 0x%p, D3D11 device context: 0x%p",
-        windowHandle,
-        d3d11Device,
-        d3d11DeviceContext
-    );
 }
 
 void ImGuiManager::Unload()
@@ -117,8 +87,6 @@ void ImGuiManager::Unload()
     ImGui_ImplWin32_Shutdown();
 
     ImGui::DestroyContext();
-
-    m_Logger.Info("Unloaded ImGui manager.");
 }
 
 void ImGuiManager::RenderMenu()
@@ -137,17 +105,23 @@ void ImGuiManager::RenderMenu()
             ImGui::PushID(name);
 
             ImGui::TableNextRow();
+            {
+                ImGui::TableNextColumn();
 
-            ImGui::TableNextColumn();
-            ImGui::AlignTextToFramePadding();
-            ImGui::TextUnformatted(name);
-            
-            ImGui::TableNextColumn();
-            ImGui::AlignTextToFramePadding();
-            ImGui::TextUnformatted(ImGui::GetKeyName(hotkey));
-            
-            ImGui::TableNextColumn();
-            ImGui::Checkbox("##capture-hotkey", &captureHotkey);
+                ImGui::AlignTextToFramePadding();
+                ImGui::TextUnformatted(name);
+            }
+            {
+                ImGui::TableNextColumn();
+
+                ImGui::AlignTextToFramePadding();
+                ImGui::TextUnformatted(ImGui::GetKeyName(hotkey));
+            }
+            {
+                ImGui::TableNextColumn();
+
+                ImGui::Checkbox("##capture-hotkey", &captureHotkey);
+            }
 
             ImGui::PopID();
         };
@@ -255,20 +229,6 @@ void ImGuiManager::Render()
 
 bool ImGuiManager::WindowProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
-    // The game sizes its borderless window to the monitor's work area but still renders at its
-    // configured resolution, which leaves the taskbar visible and misplaces ImGui (it sizes itself
-    // from the window). Stretch it over the whole monitor instead; poke it once so this also
-    // applies to a window the game positioned before the mod manager loaded.
-    if (Msg == WM_WINDOWPOSCHANGING)
-    {
-        FitBorderlessWindowToMonitor(hWnd, reinterpret_cast<WINDOWPOS*>(lParam));
-    }
-    if (!m_BorderlessWindowFitted)
-    {
-        m_BorderlessWindowFitted = true;
-        SetWindowPos(hWnd, nullptr, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
-    }
-
     ImGui_ImplWin32_WndProcHandler(hWnd, Msg, wParam, lParam);
 
     const ImGuiIO& io = ImGui::GetIO();

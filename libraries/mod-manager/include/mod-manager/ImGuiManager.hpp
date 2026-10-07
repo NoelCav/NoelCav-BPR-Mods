@@ -4,8 +4,9 @@
 #include <vector>
 #include <Windows.h>
 
-#include "core/Path.hpp"
-#include "core/Logger.hpp"
+#include <core/Path.hpp>
+#include <core/Logger.hpp>
+
 #include "mod-manager/ModManagerApi.hpp"
 #include "mod-manager/ModManagerConfigFile.hpp"
 
@@ -62,8 +63,6 @@ private:
     bool m_CaptureToggleOverlaysHotkey = false;
     bool m_OverlaysVisible = true;
     std::vector<RenderImGuiOverlay> m_Overlays;
-
-    bool m_BorderlessWindowFitted = false;
 
     const Core::Logger& m_Logger;
 };

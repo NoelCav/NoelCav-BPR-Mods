@@ -2,11 +2,12 @@
 #include <exception>
 #include <Windows.h>
 
-#include "vendor/imgui.hpp"
+#include <vendor/imgui.hpp>
 
-#include "core/Pointer.hpp"
-#include "core/Path.hpp"
-#include "core/Logger.hpp"
+#include <core/Pointer.hpp>
+#include <core/Path.hpp>
+#include <core/Logger.hpp>
+
 #include "mod-manager/ModManager.hpp"
 #include "mod-manager/HookManager.hpp"
 #include "mod-manager/ImGuiManager.hpp"
@@ -131,9 +132,6 @@ void ModManager::DeferredLoad()
 
 void ModManager::RenderMenu()
 {
-    ImGui::SetNextWindowPos(ImVec2(40.0f, 40.0f), ImGuiCond_FirstUseEver);
-    ImGui::SetNextWindowSize(ImVec2(560.0f, 480.0f), ImGuiCond_FirstUseEver);
-
     if (ImGui::Begin(k_Name, nullptr, ImGuiWindowFlags_NoFocusOnAppearing))
     {
         ImGui::PushItemWidth(ImGui::GetWindowWidth() / 2.0f);
@@ -145,16 +143,18 @@ void ModManager::RenderMenu()
 
         if (ImGui::CollapsingHeader("Config"))
         {
-            if (ImGui::Button("Save##mod-manager-config-file"))
             {
-                m_ModManagerConfigFile.Save();
-            }
+                if (ImGui::Button("Save##mod-manager-config-file"))
+                {
+                    m_ModManagerConfigFile.Save();
+                }
 
-            ImGui::SameLine();
+                ImGui::SameLine();
 
-            if (ImGui::Button("Load##mod-manager-config-file"))
-            {
-                m_ModManagerConfigFile.Load();
+                if (ImGui::Button("Load##mod-manager-config-file"))
+                {
+                    m_ModManagerConfigFile.Load();
+                }
             }
 
             m_ImGuiManager.RenderMenu();

@@ -528,6 +528,14 @@ void Junkyard::RenderPaint(const GameData::Car& car, const GameData::Finish& fin
         return;
     }
 
+    // Like the real Junkyard: a new wreck has to be repaired before it can be painted.
+    auto owned = m_Owned.find(finish.ID);
+    if (owned != m_Owned.end() && owned->second.Damage > 0.0f)
+    {
+        ImGui::TextColored(k_WarningColour, "New wreck: repair it at an Auto Repair before painting it.");
+        return;
+    }
+
     int colourIndex = finish.DefaultColourIndex;
     int paletteIndex = finish.DefaultPaletteIndex;
     if (isCurrentVehicle)
@@ -537,7 +545,6 @@ void Junkyard::RenderPaint(const GameData::Car& car, const GameData::Finish& fin
     }
     else
     {
-        auto owned = m_Owned.find(finish.ID);
         if (owned != m_Owned.end() && owned->second.ColourIndex != 0xFF && owned->second.PaletteIndex != 0xFF)
         {
             colourIndex = owned->second.ColourIndex;

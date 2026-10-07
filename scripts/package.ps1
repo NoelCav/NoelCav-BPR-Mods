@@ -16,7 +16,7 @@ $ErrorActionPreference = "Stop"
 Add-Type -AssemblyName System.IO.Compression, System.IO.Compression.FileSystem
 $Root = Split-Path -Parent $PSScriptRoot
 $Configuration = "Release x86"
-$Mods = @("teleport", "dashboard", "controls", "junkyard", "camera")
+$Mods = @("teleport", "dashboard", "controls", "junkyard", "camera", "borderless")
 $Prefix = "NoelCav-BPR"
 
 if (-not $NoBuild)

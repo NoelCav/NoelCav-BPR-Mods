@@ -12,7 +12,9 @@ stays GPLv3 with credit to matty-ross and Bo98.
 The shared foundation lives in `libraries/`:
 - `core-utils`: `Pointer`, `Patch`, `Path`, `File`, `Logger`
 - `bpr-utils`: game types, game events and actions
-- `mod-manager`: hooks, the ImGui menu and overlay, per-mod config directories
+- `mod-manager`: hooks, the ImGui menu and overlay, per-mod config directories. Kept identical
+  to matty's latest upstream (only compiled here), so `mod-manager.dll` / `imgui.dll` stay
+  compatible with other mods built on it. Don't edit it; put fixes in a mod instead.
 
 `vendor/` holds `imgui` and `yaml-cpp`. matty's own mods (free-camera, mod-menu, ...) are in his
 repository; code taken from them has to be adapted to the current mod-manager API.
@@ -44,12 +46,13 @@ repository; code taken from them has to be adapted to the current mod-manager AP
 
 | Mod | What it does |
 |---|---|
-| `mod-manager` (library) | Hooks, ImGui menu/overlay (F7 / F8). Also fixes borderless windowed (below). |
+| `mod-manager` (library) | Hooks, ImGui menu/overlay (F7 / F8). matty's, unmodified. |
 | `teleport` | Live position readout; presets saved from the car's current position, with Update and Delete per preset; manual X/Y/Z teleport; all 6 Junkyards (both directions and "enter"), also from the map. |
 | `dashboard` | Code-drawn speedometer and tachometer (no textures), anchored bottom-left by default, draggable while the menu is open. Hides in Showtime. |
 | `controls` | Right-stick look inversion: up/down everywhere, left/right separately for driving and Showtime. |
 | `camera` | Chase camera height, distance, down angle and FOV as offsets on each car's defaults. |
 | `junkyard` | Portable Junkyard: owned cars in game order and category tabs, Burning Route and wrecked status, unlocked finishes, paint. |
+| `borderless` | Borderless windowed fix (below). |
 
 Every mod is an independent package: one DLL that depends only on the shared `libraries/`, never
 on another mod.
@@ -57,15 +60,17 @@ on another mod.
 Menu windows default to side-by-side positions (via `ImGuiCond_FirstUseEver`).
 Once a window has been moved, its position is saved in `mods\imgui.ini`.
 
-### Borderless windowed fix (`mod-manager`)
+### Borderless
 In `WindowMode=2` the game sizes its window to the monitor's *work area*
 (2560x1392 with the taskbar) but renders at its configured resolution
 (2560x1440). The taskbar stays visible, and ImGui, which sizes itself from
 the window, draws overlays too high and misplaces clicks.
 
-`ImGuiManager::WindowProc` rewrites `WM_WINDOWPOSCHANGING` for borderless
-windows (no `WS_CAPTION` or `WS_THICKFRAME`) to cover the whole monitor, and forces it
-once on the first message.
+On the first game frame the mod subclasses the game window (`[0x0139815C]`, via
+`SetWindowLongPtr`), rewrites `WM_WINDOWPOSCHANGING` for borderless windows (no `WS_CAPTION` or
+`WS_THICKFRAME`) to cover the whole monitor, and pokes the window once with `SetWindowPos` so it
+applies straight away. It chains to the previous window procedure, which still contains the mod
+manager's own hook. Config: `borderless\borderless-config.yaml` (`Enabled`).
 
 ### Teleport
 - **Writes position:** fires `GameEvent_TeleportPlayerVehicle` (id 1) from

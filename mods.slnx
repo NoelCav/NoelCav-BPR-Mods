@@ -8,6 +8,7 @@
     <Project Path="libraries/mod-manager/mod-manager.vcxproj" Id="1c27c1fc-950b-453c-8596-69f0fbdc1b11" />
   </Folder>
   <Folder Name="/mods/">
+    <Project Path="mods/borderless/borderless.vcxproj" Id="020d1974-00b5-4e00-a51e-c293f76075e3" />
     <Project Path="mods/camera/camera.vcxproj" Id="e436fa36-1d9b-4a3f-b3c4-272bce118066" />
     <Project Path="mods/controls/controls.vcxproj" Id="5e2c9b47-7a1d-4f3e-b6c8-3d9a0f1e2b74" />
     <Project Path="mods/dashboard/dashboard.vcxproj" Id="c4b6e9a2-5d3f-4a1e-8b7c-2f9d6e4a1c8b" />
