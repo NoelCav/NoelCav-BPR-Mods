@@ -63,6 +63,7 @@ private:
     // Frames the driving HUD has been up; pending teleports wait for it (see OnGameStatePreWorldUpdate).
     int m_DrivingFrames = 0;
     std::atomic<bool> m_Driving = false;
+    std::atomic<bool> m_Paused = false;
     std::atomic<bool> m_InJunkyard = false;
     float m_PendingPosition[3] = {};
     float m_PendingDirection[3] = {};
@@ -80,6 +81,7 @@ private:
     // (or Esc without a controller); the teleport then happens once back on the road.
     std::atomic<bool> m_CloseMenuRequested = false;
     std::atomic<int> m_PressBackFrames = 0;
+    int m_InputReleasedFrames = 0; // B waits until the A / X / 2 / Enter that asked is let go
     std::atomic<bool> m_ControllerConnected = false;
     bool m_HookInstalled = false;
 

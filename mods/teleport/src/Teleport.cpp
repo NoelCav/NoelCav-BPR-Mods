@@ -115,9 +115,19 @@ namespace
         SendInput(2, inputs, sizeof(INPUT));
     }
 
-    // The map screen's hovered item: its ID while the map is open (0 over empty ground),
-    // 0xFFFFFFFF once the map is closed. Found 2026-09-22 by hovering Junkyards on the map.
-    constexpr ptrdiff_t k_MapHoveredItem = 0xB79500;
+    // Free-roam pause menu (any tab, map included) is open. 0 while driving, crashed, in a
+    // Junkyard and in Showtime. Found 2026-10-06 by snapshot diffs of the gm block.
+    constexpr ptrdiff_t k_PauseMenuOpen = 0xB6D3C6;
+
+    // In a Junkyard (any of its screens), from driving into the box until driving out. Found
+    // 2026-10-06 the same way.
+    constexpr ptrdiff_t k_InJunkyard = 0xB3A939;
+
+    // The map screen's hovered item: its ID while hovered (0 over empty ground); off the map it
+    // holds small unrelated values, so only read it with the pause menu open. Found 2026-10-06
+    // (the 2026-09-22 address, gm+0xB79500, is one slot of a per-icon list and only matched some
+    // Junkyards).
+    constexpr ptrdiff_t k_MapHoveredItem = 0x7FAD90;
 
     // Reads the first controller directly (the game's own XInput DLL), so this works with or
     // without the Controls mod.
@@ -317,16 +327,6 @@ namespace
         return nearest;
     }
 
-    // There's no known "in a Junkyard" flag yet, so: the driving HUD is off (as it is in a pause
-    // menu too) while the car sits inside a Junkyard's drive-through.
-    bool IsAtJunkyard(const float position[3])
-    {
-        constexpr float k_Radius = 20.0f;
-        const Junkyard* nearest = FindNearestJunkyard(position);
-        float dx = nearest->BoxCenter[0] - position[0];
-        float dz = nearest->BoxCenter[1] - position[2];
-        return dx * dx + dz * dz < k_Radius * k_Radius;
-    }
 }
 
 
@@ -518,12 +518,18 @@ void Teleport::OnGameMain()
 
     bool driving = IsDrivingHudActive();
     m_Driving = driving; // the world update (which also sets this) stops while paused
-    float position[3] = {};
-    float direction[3] = {};
-    m_InJunkyard = !driving && GetCurrentTransform(position, direction) && IsAtJunkyard(position);
+    bool paused = gameModule.at(k_PauseMenuOpen).as<uint8_t>() != 0;
+    m_Paused = paused;
+    m_InJunkyard = gameModule.at(k_InJunkyard).as<uint8_t>() != 0;
 
-    // Close the pause menu for a teleport asked for while paused. Stop pressing B as soon as
-    // we're driving, so it doesn't turn into a look-back.
+    HWND gameWindow = Core::Pointer(0x0139815C).as<HWND>();
+    bool focused = GetForegroundWindow() == gameWindow;
+    XINPUT_GAMEPAD pad = focused ? GetController() : XINPUT_GAMEPAD{};
+
+    // Close the pause menu for a teleport asked for while paused. The map ignores B while A (its
+    // own button) is still held, so wait until every button and our hotkeys have been let go for
+    // a couple of frames. Stop pressing B as soon as we're driving, so it doesn't turn into a
+    // look-back.
     if (driving)
     {
         m_PressBackFrames = 0;
@@ -532,8 +538,18 @@ void Teleport::OnGameMain()
     {
         --m_PressBackFrames;
     }
-    if (m_CloseMenuRequested.exchange(false) && !driving && !m_InJunkyard.load() && m_TeleportPending.load())
+
+    bool inputHeld = pad.wButtons != 0 ||
+        (focused && ((GetAsyncKeyState('2') & 0x8000) != 0 || (GetAsyncKeyState(VK_RETURN) & 0x8000) != 0));
+    m_InputReleasedFrames = inputHeld ? 0 : m_InputReleasedFrames + 1;
+
+    if (!paused || m_InJunkyard.load() || !m_TeleportPending.load())
     {
+        m_CloseMenuRequested = false;
+    }
+    else if (m_CloseMenuRequested.load() && m_InputReleasedFrames >= 2)
+    {
+        m_CloseMenuRequested = false;
         if (m_HookInstalled && m_ControllerConnected.load())
         {
             m_PressBackFrames = 4;
@@ -543,10 +559,6 @@ void Teleport::OnGameMain()
             PressEscape();
         }
     }
-
-    HWND gameWindow = Core::Pointer(0x0139815C).as<HWND>();
-    bool focused = GetForegroundWindow() == gameWindow;
-    XINPUT_GAMEPAD pad = focused ? GetController() : XINPUT_GAMEPAD{};
 
     // Show keyboard or controller prompts for whichever was used last.
     auto stickMoved = [](SHORT value) { return value > 12000 || value < -12000; };
@@ -567,7 +579,7 @@ void Teleport::OnGameMain()
         }
     }
 
-    uint32_t hovered = gameModule.at(k_MapHoveredItem).as<uint32_t>();
+    uint32_t hovered = paused ? gameModule.at(k_MapHoveredItem).as<uint32_t>() : 0;
     m_HoveredMapItem = hovered;
 
     const Junkyard* junkyard = m_MapTeleport.load() ? FindJunkyardByID(hovered) : nullptr;
@@ -792,7 +804,7 @@ void Teleport::RequestTeleport(const float position[3], const float direction[3]
     std::memcpy(m_PendingPosition, position, sizeof(m_PendingPosition));
     std::memcpy(m_PendingDirection, direction, sizeof(m_PendingDirection));
     m_TeleportPending.store(true);
-    m_CloseMenuRequested = !m_Driving.load();
+    m_CloseMenuRequested = m_Paused.load(); // closed once the button that asked is released
 }
 
 void Teleport::RenderMenu()
@@ -850,7 +862,7 @@ void Teleport::RenderMenu()
         {
             ImGui::TextColored(ImVec4(1.0f, 0.65f, 0.3f, 1.0f), "Teleports are off in Junkyards.");
         }
-        else if (!m_Driving.load())
+        else if (m_Paused.load())
         {
             ImGui::TextColored(ImVec4(1.0f, 0.65f, 0.3f, 1.0f), "Paused: teleporting closes the pause menu.");
         }

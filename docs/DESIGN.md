@@ -80,8 +80,8 @@ once on the first message.
   controller B for a few frames through the `XInputGetState` slot (see Controls), or by sending
   Esc when no controller is connected. The teleport fires once the driving HUD has been up for
   15 frames, so trigger boxes (Junkyard entry) work.
-- **In a Junkyard:** teleports are off. There's no known Junkyard flag, so "in a Junkyard" is
-  "driving HUD off and the car within 20 m of a Junkyard box centre".
+- **In a Junkyard:** teleports are off (`gm+0xB3A939`, see addresses). The pause menu is told apart
+  by `gm+0xB6D3C6`; only then does a teleport close a menu.
 - **Map teleport:** can be turned off (`MapTeleport` in `teleport-config.yaml`), which removes
   both the hotkeys and the drawn prompts.
 
@@ -182,6 +182,15 @@ All absolute, PC/Steam build, x86. `gm` = `[0x013FC8E0]` (`BrnGame::BrnGameModul
   - `+0x48` engine state
 - `gm+0x7FABBC` → `BrnGui::RaceMainHudState*`, `+0x14C` in-race HUD. It stays 1 in
   Showtime and in idle mode; it's 0 while paused.
+- `gm+0xB6D3C6` (byte) free-roam pause menu open, any tab including the map. 0 while driving,
+  after a crash, in a Junkyard and in Showtime (Showtime's own pause doesn't set it).
+- `gm+0xB3A939` (byte) in a Junkyard, any screen, from entering the box to driving out.
+  Both found 2026-10-06 by snapshot diffs across driving / pause / map / Junkyard / crash /
+  Showtime. The car itself sits ~60 m from the Junkyard box while inside, so position can't be used.
+- `gm+0x7FAD90` map hovered item ID (Junkyard CgsID while hovered, 0 on empty ground). Off the map it
+  holds small unrelated values; read it only while paused. `gm+0xB79500`, used before, is one slot of
+  a per-icon list and only matched some Junkyards. `gm+0x7CFA50` keeps the last hovered item after
+  the map closes.
 - `gm+0x6A4104` challenge timer running; `gm+0x6EBE50` current freeburn game
 - `gm+0x3FFD4` boost type; `gm+0x40754`/`+0x40758` boost level / loss
 - Right stick: raw at `gm+0x71D9E8..F8`; processed at `gm+0x40DF8` (X) and `gm+0x40E00` (Y),
@@ -270,7 +279,6 @@ All absolute, PC/Steam build, x86. `gm` = `[0x013FC8E0]` (`BrnGame::BrnGameModul
 1. **DJ Atomika volume slider:** find the DJ/voice-over audio bus. No references exist.
 2. **Teleport to mission/event starts:** needs the start data, probably in `PROGRESSION.DAT` /
    `STREETDATA.DAT`.
-3. **A real "in a Junkyard" flag** for Teleport, to replace the distance check.
-4. Smaller follow-ups:
+3. Smaller follow-ups:
    - Dashboard trip meter/odometer (needs a detour)
    - Hide the dials in idle mode (the flag isn't found yet)
