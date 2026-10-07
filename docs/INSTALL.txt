@@ -37,8 +37,10 @@ UNINSTALL
 TROUBLESHOOTING
   - Nothing happens on F7: check BPR Modder is installed (dinput8.dll in the game folder) and
     that the DLLs are in the right folders (above).
-  - "Mod Manager and Mod versions mismatch": another mod pack installed a different
-    mod-manager.dll. Re-extract this zip, or use matching versions.
+  - Mods missing from F7, "versions mismatch", or "entry point not found": another mod pack
+    (such as matty-ross's v1.4.0 release) replaced mod-manager.dll / imgui.dll with a different
+    version. Re-extract this zip. These mods need mod manager 2.0.0 and can't be used together
+    with mods built for 1.4.0.
   - "MSVCP140.dll / VCRUNTIME140.dll was not found": install the x86 Visual C++ Redistributable.
 
 License: GPLv3 (see LICENSE). Built on matty-ross's bpr-mods-repository.

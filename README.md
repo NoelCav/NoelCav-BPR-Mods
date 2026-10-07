@@ -66,8 +66,9 @@ delete that folder to reset a mod. The game save is never touched.
 | EA app version | Should work; not tested. |
 | *The Ultimate Box* | Not supported. |
 | BPR Modder `.bprmod` packs (Core Bugfixes, Traffic Toggle, ...) | Tested alongside Core Bugfixes and Traffic Toggle. They don't share any files with these mods. |
-| Other mods built on [matty-ross's mod manager](https://github.com/matty-ross/bpr-mods-repository) | Compatible: `mod-manager.dll` and `imgui.dll` here are his current version (mod manager 2.0.0), built from his unmodified source. Mods built for an older or newer mod manager version show a "versions mismatch" message. |
-| matty-ross's Free Camera | Both it and **Camera** change the chase camera; use one at a time. |
+| matty-ross's released mods (v1.4.0: Quality of Life, Free Camera, Mod Menu, Dashboard, ...) | **Not compatible yet.** They use mod manager 1.4.0; these mods are built for his next version, 2.0.0, and both ship as `mod-manager.dll` / `imgui.dll`, so whichever you install last breaks the other. Use one set or the other until matty-ross releases 2.0.0. |
+| Mods built for mod manager 2.0.0 | Compatible: the same `mod-manager.dll` / `imgui.dll`. (matty-ross's Free Camera, once on 2.0.0, changes the chase camera like **Camera** does; use one at a time.) |
+| matty-ross's Dashboard | Same file name (`mods\dashboard.dll`): this Dashboard is a rework of his and replaces it. |
 | Controller remappers (Steam Input, DS4Windows, ...) | Should work; not tested. Controls and Teleport only change what the game reads from the first controller. |
 
 ## The mods
@@ -172,13 +173,12 @@ window (takes effect after a restart).
 | File | What it is |
 |---|---|
 | `mods\<mod>.dll` | The mod. It contains everything it needs itself (yaml-cpp, used to read and write the settings files, is built into each DLL). |
-| `mod-manager.dll` | matty-ross's mod manager, unmodified: loads the mods, draws their menus, provides the game hooks. One copy is shared by every mod built on it. |
+| `mod-manager.dll` | matty-ross's mod manager (version 2.0.0), compiled from his source without changes: loads the mods, draws their menus, provides the game hooks. Shared by every mod built on it. |
 | `imgui.dll` | [Dear ImGui](https://github.com/ocornut/imgui), the menu/overlay library, used by the mod manager and the mods. Also shared. |
 
-These two shared files are the only ones outside `mods\`. Other mods built on matty-ross's mod
-manager use the same two files; if they're for the same mod manager version (2.0.0), the copies
-are interchangeable, so whichever was installed last works for all of them (see
-[Compatibility](#compatibility)). Nothing else in the game folder is touched: no game files
+These two shared files are the only ones outside `mods\`. Every mod built on matty-ross's mod
+manager ships them (his own release zips do too), so they're only interchangeable between mods built
+for the same mod manager version; see [Compatibility](#compatibility). Nothing else in the game folder is touched: no game files
 are modified, and BPR Modder's own files and `.bprmod` packs are left alone. Other tools that use
 ImGui (ReShade, Special K, ...) build it into their own files, so they don't clash with `imgui.dll`.
 
@@ -187,8 +187,9 @@ ImGui (ReShade, Special K, ...) build it into their own files, so they don't cla
 
 - **Nothing happens on F7:** check BPR Modder is installed (`dinput8.dll` in the game folder) and the
   DLLs are in the folders shown above.
-- **"Mod Manager and Mod versions mismatch":** another mod pack installed a different
-  `mod-manager.dll`. Re-extract the zip, or use mods built for the same mod manager version.
+- **Mods missing from F7, a "versions mismatch" message, or an "entry point not found" error:**
+  another mod pack (such as matty-ross's v1.4.0 release) replaced `mod-manager.dll` / `imgui.dll` with
+  a different version. Re-extract this zip; see [Compatibility](#compatibility).
 - **"MSVCP140.dll / VCRUNTIME140.dll was not found":** install the x86 Visual C++ Redistributable.
 </details>
 
@@ -211,7 +212,7 @@ with the zips. Design notes, known game addresses and what's left to do are in
 ## Credits
 
 - **NoelCav**: Teleport, Controls, Junkyard, Camera, Borderless, and the Dashboard rework.
-- **[matty-ross](https://github.com/matty-ross)** (PISros0724): the mod manager (included unmodified), core-utils,
+- **[matty-ross](https://github.com/matty-ross)** (PISros0724): the mod manager (shipped as `mod-manager.dll`, built from his source), core-utils,
   bpr-utils and the original Dashboard. Junkyard's car naming and vehicle-change code are adapted from his `mod-menu`,
   and Camera's parameter offsets come from his `free-camera`.
 - **[Bo98](https://bpr.bo98.uk)**: BPR Modder, which loads the mods.
