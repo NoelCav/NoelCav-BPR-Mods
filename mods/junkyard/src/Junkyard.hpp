@@ -15,6 +15,7 @@
 // Portable Junkyard: pick any car you own, in the game's order and category tabs, pick one of
 // its unlocked finishes, and paint it - from anywhere in free roam. Only what a real Junkyard
 // would let you do; nothing is unlocked or repaired for you.
+// Inspired by the portable Junkyard in Brick Remastered (by Brick); no code from it is used.
 class Junkyard
 {
 private:

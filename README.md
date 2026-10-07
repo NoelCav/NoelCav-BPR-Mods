@@ -9,7 +9,7 @@ and its shared mod manager. Every mod is independent: install any combination.
 
 | Mod | What it does |
 |---|---|
-| [**Teleport**](#teleport) | Live position readout; save, update and teleport to named spots; one-click teleport to every Junkyard, from the menu or straight from the map (optional). |
+| [**Teleport**](#teleport) | In-game teleport to any Junkyard, straight from the map, plus a mod menu with full teleport presets. |
 | [**Dashboard**](#dashboard) | Speedometer and tachometer overlay. Each gauge can be toggled and moved. |
 | [**Controls**](#controls) | Adds the ability to invert camera look. |
 | [**Junkyard**](#junkyard) | Portable Junkyard: switch to any car you own from anywhere in free roam. Lists the status and traits of each car, including whether it's a new wreck (can't be painted) or has an uncompleted Burning Route. |
@@ -77,6 +77,9 @@ change them.
 
 ### Teleport
 
+The main purpose: get to any Junkyard straight from the in-game map instead of driving across the
+city. The mod menu adds a full teleport tool with saved presets.
+
 - **Current position:** live X / Y / Z of your car.
 - **Presets:** type a name and press *Save current position*. Each preset has *Teleport*,
   *Update* (overwrite it with where you are now) and *Delete*.
@@ -102,6 +105,8 @@ buttons and prompts off entirely.
 
 ### Dashboard
 
+The game has no speedometer or rev counter; this adds both as an overlay.
+
 - Speedometer and tachometer (with gear), drawn crisp at any size.
 - **Moving the dials:** open the menus (F7) and drag a dial with the mouse. You can also pick an
   *Anchor* (bottom left, center or right) and fine-tune each dial's *Offset X / Y*. *Reset layout*
@@ -113,7 +118,10 @@ buttons and prompts off entirely.
 
 ### Controls
 
-Invert the camera look on the right stick, each option on its own:
+The game has no look-inversion options, and it flips the left/right look direction in Showtime
+compared to driving. With the default settings this mod normalizes every look direction: push the
+right stick left and the camera turns left, push up and it looks up, whether you're driving or in
+Showtime. Each axis can still be changed on its own:
 
 - *Invert up/down (everywhere)*
 - *Invert left/right while driving*
@@ -121,8 +129,11 @@ Invert the camera look on the right stick, each option on its own:
 
 ### Junkyard
 
-A portable Junkyard: change cars from anywhere in free roam, with only what a real Junkyard
-would let you do.
+The game only lets you change cars inside a Junkyard. This is a portable Junkyard: change cars
+from anywhere in free roam, with only what a real Junkyard would let you do, plus tracking of your
+Burning Routes and wrecks. It was inspired by the portable Junkyard in
+[Brick Remastered](https://bpr.bo98.uk), but works differently: that one also offers locked cars and
+unrestricted paint, while this one sticks to the cars you own and the game's own paint rules.
 
 - **Only cars you own:** nothing gets unlocked, and wrecks aren't repaired for you.
 - **Same layout as the game:** cars are in the game's order, in the same category tabs (Paradise
@@ -132,7 +143,8 @@ would let you do.
 - **Burning Route tracker:** the *Burning Route* column shows *Done* or *Not done* for every car
   that has one. The reward cars are tagged **BR** after their name.
 - **New wrecks:** cars you've won but not yet repaired show as *Wrecked*. You can drive them (an
-  Auto Repair fixes them), but, like the real Junkyard, they can't be painted until they're repaired.
+  Auto Repair fixes them). As in the real Junkyard they can't be painted until they're repaired;
+  the paint section tells you so.
 - **Finishes and paint:** pick any finish you've unlocked, and paint the car from the Gloss,
   Metallic and Pearlescent colours. Hover a colour to see its pearl.
 - **When it works:** free roam only. Not in Showtime, events, challenges, online, or while you're
@@ -140,7 +152,8 @@ would let you do.
 
 ### Camera
 
-Changes the normal driving (chase) camera, which still follows the car exactly like the stock one:
+The game has no camera settings. This adjusts the normal driving (chase) camera, which still
+follows the car exactly like the stock one:
 
 - *Height*, *Distance*, *Down angle* and *Field of view*. The sliders show the camera's real values.
 - Your changes are saved as a difference from each car's own camera, so one setup suits every car.
@@ -202,6 +215,8 @@ with the zips. Design notes, known game addresses and what's left to do are in
   bpr-utils and the original Dashboard. Junkyard's car naming and vehicle-change code are adapted from his `mod-menu`,
   and Camera's parameter offsets come from his `free-camera`.
 - **[Bo98](https://bpr.bo98.uk)**: BPR Modder, which loads the mods.
+- **Brick**: [Brick Remastered](https://bpr.bo98.uk), the inspiration for the portable Junkyard. No code
+  from it is used.
 - **[burnout.wiki](https://burnout.wiki)** contributors: file and memory layouts (vehicle list, progression
   profile, trigger data, car colours).
 - [Dear ImGui](https://github.com/ocornut/imgui) and [yaml-cpp](https://github.com/jbeder/yaml-cpp).
