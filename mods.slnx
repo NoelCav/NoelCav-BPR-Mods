@@ -1,0 +1,22 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/libraries/">
+    <Project Path="libraries/bpr-utils/bpr-utils.vcxproj" Id="58d994f4-ddad-44d3-96cd-590941114e62" />
+    <Project Path="libraries/core-utils/core-utils.vcxproj" Id="fdfa5ac5-a8e2-4d83-a900-5f30e4dfdb69" />
+    <Project Path="libraries/mod-manager/mod-manager.vcxproj" Id="1c27c1fc-950b-453c-8596-69f0fbdc1b11" />
+  </Folder>
+  <Folder Name="/mods/">
+    <Project Path="mods/camera/camera.vcxproj" Id="e436fa36-1d9b-4a3f-b3c4-272bce118066" />
+    <Project Path="mods/controls/controls.vcxproj" Id="5e2c9b47-7a1d-4f3e-b6c8-3d9a0f1e2b74" />
+    <Project Path="mods/dashboard/dashboard.vcxproj" Id="c4b6e9a2-5d3f-4a1e-8b7c-2f9d6e4a1c8b" />
+    <Project Path="mods/junkyard/junkyard.vcxproj" Id="410d79b9-2c70-4d79-abd5-2838eec90b95" />
+    <Project Path="mods/teleport/teleport.vcxproj" Id="8a3f7c1e-2b4d-4a6f-9e3c-1d5b7f8a9c2e" />
+  </Folder>
+  <Folder Name="/vendor/">
+    <Project Path="vendor/imgui/imgui.vcxproj" Id="7dc3e603-4726-4242-8afd-1dabaf9dfea7" />
+    <Project Path="vendor/yaml-cpp/yaml-cpp.vcxproj" Id="072109b8-5077-45d6-b04e-018f284fb3e1" />
+  </Folder>
+</Solution>

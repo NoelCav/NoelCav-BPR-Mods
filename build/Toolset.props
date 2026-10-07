@@ -1,0 +1,5 @@
+<Project>
+  <PropertyGroup Condition="'$(VisualStudioVersion)' == '17.0'">
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+</Project>

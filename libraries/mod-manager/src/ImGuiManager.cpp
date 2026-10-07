@@ -1,0 +1,455 @@
+#include <Windows.h>
+#include <d3d11.h>
+
+#include "vendor/imgui.hpp"
+
+#include "core/Pointer.hpp"
+#include "core/Path.hpp"
+#include "core/Logger.hpp"
+#include "core/Patch.hpp"
+#include "mod-manager/ModManager.hpp"
+#include "mod-manager/ModManagerConfigFile.hpp"
+#include "mod-manager/ImGuiManager.hpp"
+
+
+// https://github.com/ocornut/imgui/blob/docking/examples/example_win32_directx11/main.cpp
+
+
+IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
+
+// Rewrites a pending move/resize of a borderless (no caption, no sizing frame) window so it
+// covers its whole monitor. Windowed mode and minimizing are left alone.
+static void FitBorderlessWindowToMonitor(HWND hWnd, WINDOWPOS* windowPos)
+{
+    LONG style = GetWindowLongA(hWnd, GWL_STYLE);
+    if ((style & (WS_CAPTION | WS_THICKFRAME)) != 0 || IsIconic(hWnd) || windowPos->x <= -32000)
+    {
+        return;
+    }
+
+    MONITORINFO monitorInfo = { sizeof(monitorInfo) };
+    if (!GetMonitorInfoA(MonitorFromWindow(hWnd, MONITOR_DEFAULTTONEAREST), &monitorInfo))
+    {
+        return;
+    }
+
+    const RECT& monitor = monitorInfo.rcMonitor;
+    windowPos->x = monitor.left;
+    windowPos->y = monitor.top;
+    windowPos->cx = monitor.right - monitor.left;
+    windowPos->cy = monitor.bottom - monitor.top;
+    windowPos->flags &= ~(SWP_NOMOVE | SWP_NOSIZE);
+}
+
+ImGuiManager::ImGuiManager(ModManagerConfigFile::ImGuiConfig& imguiConfig, Core::Path configDirectoryPath, const Core::Logger& logger)
+    :
+    m_ImGuiConfig(imguiConfig),
+    m_IniFilePath(configDirectoryPath.Append("imgui.ini")),
+    m_Logger(logger)
+{
+    InitializeCriticalSection(&m_CriticalSection);
+}
+
+ImGuiManager::~ImGuiManager()
+{
+    DeleteCriticalSection(&m_CriticalSection);
+}
+
+CRITICAL_SECTION* ImGuiManager::GetCriticalSection()
+{
+    return &m_CriticalSection;
+}
+
+void ImGuiManager::AddMenu(RenderImGuiMenu menu)
+{
+    EnterCriticalSection(&m_CriticalSection);
+
+    m_Menus.push_back(menu);
+    m_Logger.Info("Added ImGui menu. address: 0x%p", menu);
+
+    LeaveCriticalSection(&m_CriticalSection);
+}
+
+void ImGuiManager::AddOverlay(RenderImGuiOverlay overlay)
+{
+    EnterCriticalSection(&m_CriticalSection);
+
+    m_Overlays.push_back(overlay);
+    m_Logger.Info("Added ImGui overlay. address: 0x%p", overlay);
+
+    LeaveCriticalSection(&m_CriticalSection);
+}
+
+void ImGuiManager::Load()
+{
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+
+    ImGuiIO& io = ImGui::GetIO();
+    io.IniFilename = m_IniFilePath.GetPath();
+    io.ConfigViewportsNoTaskBarIcon = true;
+
+    HWND windowHandle = Core::Pointer(0x0139815C).as<HWND>();
+    ID3D11Device* d3d11Device = Core::Pointer(0x01485BF8).as<ID3D11Device*>();
+    ID3D11DeviceContext* d3d11DeviceContext = Core::Pointer(0x01485ECC).as<ID3D11DeviceContext*>();
+    ImGui_ImplWin32_Init(windowHandle);
+    ImGui_ImplDX11_Init(d3d11Device, d3d11DeviceContext);
+
+    // ImGui updates the cursor itself.
+    SetClassLongPtrA(windowHandle, GCLP_HCURSOR, NULL);
+
+    Core::Patch(0x0817E440, 6, m_Logger).WriteJMP(Hook_Render);
+    Core::Patch(0x008FB9D9, 5, m_Logger).WriteJMP(Hook_WindowProc);
+    Core::Patch(0x0664BB29, 8, m_Logger).WriteJMP(Hook_CaptureKeyboard);
+
+    m_Logger.Info(
+        "Loaded ImGui manager. window handle: 0x%08X, D3D11 device: 0x%p, D3D11 device context: 0x%p",
+        windowHandle,
+        d3d11Device,
+        d3d11DeviceContext
+    );
+}
+
+void ImGuiManager::Unload()
+{
+    ImGui_ImplDX11_Shutdown();
+    ImGui_ImplWin32_Shutdown();
+
+    ImGui::DestroyContext();
+
+    m_Logger.Info("Unloaded ImGui manager.");
+}
+
+void ImGuiManager::RenderMenu()
+{
+    ImGui::SeparatorText("ImGui");
+
+    if (ImGui::BeginTable("##imgui-hotkeys", 3))
+    {
+        ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthStretch, 0.5f);
+        ImGui::TableSetupColumn("Hotkey", ImGuiTableColumnFlags_WidthStretch, 0.3f);
+        ImGui::TableSetupColumn("Capture", ImGuiTableColumnFlags_WidthStretch, 0.2f);
+        ImGui::TableHeadersRow();
+
+        auto renderHotkeyRow = [](const char* name, ImGuiKey hotkey, bool& captureHotkey)
+        {
+            ImGui::PushID(name);
+
+            ImGui::TableNextRow();
+
+            ImGui::TableNextColumn();
+            ImGui::AlignTextToFramePadding();
+            ImGui::TextUnformatted(name);
+            
+            ImGui::TableNextColumn();
+            ImGui::AlignTextToFramePadding();
+            ImGui::TextUnformatted(ImGui::GetKeyName(hotkey));
+            
+            ImGui::TableNextColumn();
+            ImGui::Checkbox("##capture-hotkey", &captureHotkey);
+
+            ImGui::PopID();
+        };
+        renderHotkeyRow("Toggle Menus Hotkey", m_ImGuiConfig.ToggleMenusHotkey, m_CaptureToggleMenusHotkey);
+        renderHotkeyRow("Toggle Overlays Hotkey", m_ImGuiConfig.ToggleOverlaysHotkey, m_CaptureToggleOverlaysHotkey);
+
+        ImGui::EndTable();
+    }
+
+    static constexpr const char* styleColors[] =
+    {
+        "Classic",
+        "Dark",
+        "Light",
+    };
+    ImGui::Combo("Style Colors", reinterpret_cast<int*>(&m_ImGuiConfig.StyleColors), styleColors, IM_COUNTOF(styleColors));
+
+    ImGui::SliderFloat("Font Scale", &m_ImGuiConfig.FontScale, 0.5f, 2.0f, "%.3f", ImGuiSliderFlags_AlwaysClamp);
+
+    ImGui::Checkbox("Enable Docking", &m_ImGuiConfig.EnableDocking);
+    ImGui::Checkbox("Enable Viewports", &m_ImGuiConfig.EnableViewports);
+}
+
+void ImGuiManager::HandleHotkeys()
+{
+    auto captureHotkey = [](ImGuiKey& hotkey)
+    {
+        for (ImGuiKey key = ImGuiKey_NamedKey_BEGIN; key < ImGuiKey_NamedKey_END; key = static_cast<ImGuiKey>(key + 1))
+        {
+            // Don't capture these keys.
+            switch (key)
+            {
+            case ImGuiKey_MouseLeft:
+                continue;
+            }
+
+            if (ImGui::IsKeyDown(key))
+            {
+                hotkey = key;
+            }
+        }
+    };
+
+    if (m_CaptureToggleMenusHotkey)
+    {
+        captureHotkey(m_ImGuiConfig.ToggleMenusHotkey);
+    }
+    else
+    {
+        if (ImGui::IsKeyPressed(m_ImGuiConfig.ToggleMenusHotkey, false))
+        {
+            m_MenusVisible = !m_MenusVisible;
+
+            Core::Pointer(0x01398242).as<bool>() = m_MenusVisible;
+            Core::Pointer(0x0139813E).as<bool>() = true;
+        }
+    }
+
+    if (m_CaptureToggleOverlaysHotkey)
+    {
+        captureHotkey(m_ImGuiConfig.ToggleOverlaysHotkey);
+    }
+    else
+    {
+        if (ImGui::IsKeyPressed(m_ImGuiConfig.ToggleOverlaysHotkey, false))
+        {
+            m_OverlaysVisible = !m_OverlaysVisible;
+        }
+    }
+}
+
+void ImGuiManager::Render()
+{
+    EnterCriticalSection(&m_CriticalSection);
+
+    ApplyConfig();
+
+    ImGui_ImplDX11_NewFrame();
+    ImGui_ImplWin32_NewFrame();
+    ImGui::NewFrame();
+
+    if (m_MenusVisible)
+    {
+        for (RenderImGuiMenu menu : m_Menus)
+        {
+            menu();
+        }
+    }
+    if (m_OverlaysVisible)
+    {
+        for (RenderImGuiOverlay overlay : m_Overlays)
+        {
+            overlay();
+        }
+    }
+
+    ImGui::Render();
+    ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+
+    ImGui::UpdatePlatformWindows();
+    ImGui::RenderPlatformWindowsDefault();
+
+    LeaveCriticalSection(&m_CriticalSection);
+}
+
+bool ImGuiManager::WindowProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
+{
+    // The game sizes its borderless window to the monitor's work area but still renders at its
+    // configured resolution, which leaves the taskbar visible and misplaces ImGui (it sizes itself
+    // from the window). Stretch it over the whole monitor instead; poke it once so this also
+    // applies to a window the game positioned before the mod manager loaded.
+    if (Msg == WM_WINDOWPOSCHANGING)
+    {
+        FitBorderlessWindowToMonitor(hWnd, reinterpret_cast<WINDOWPOS*>(lParam));
+    }
+    if (!m_BorderlessWindowFitted)
+    {
+        m_BorderlessWindowFitted = true;
+        SetWindowPos(hWnd, nullptr, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
+    }
+
+    ImGui_ImplWin32_WndProcHandler(hWnd, Msg, wParam, lParam);
+
+    const ImGuiIO& io = ImGui::GetIO();
+
+    if (io.WantCaptureMouse)
+    {
+        // Don't pass these mouse messages to the game.
+        switch (Msg)
+        {
+        case WM_MOUSEMOVE:
+        case WM_LBUTTONDOWN:
+        case WM_LBUTTONUP:
+        case WM_MOUSEWHEEL:
+            return false;
+        }
+    }
+    if (io.WantCaptureKeyboard)
+    {
+        // Don't pass these keyboard messages to the game.
+        switch (Msg)
+        {
+        case WM_KEYDOWN:
+        case WM_SYSKEYDOWN:
+        case WM_CHAR:
+        case WM_MENUCHAR:
+        case WM_COMMAND:
+            return false;
+        }
+    }
+
+    return true;
+}
+
+void ImGuiManager::ApplyConfig()
+{
+    ImGuiIO& io = ImGui::GetIO();
+    ImGuiStyle& style = ImGui::GetStyle();
+
+    switch (m_ImGuiConfig.StyleColors)
+    {
+    case ModManagerConfigFile::ImGuiConfig::StyleColors::Dark:
+        ImGui::StyleColorsDark();
+        break;
+
+    case ModManagerConfigFile::ImGuiConfig::StyleColors::Light:
+        ImGui::StyleColorsLight();
+        break;
+
+    case ModManagerConfigFile::ImGuiConfig::StyleColors::Classic:
+    default:
+        ImGui::StyleColorsClassic();
+        break;
+    }
+
+    style.FontScaleMain = m_ImGuiConfig.FontScale;
+
+    if (m_ImGuiConfig.EnableDocking)
+    {
+        io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    }
+    else
+    {
+        io.ConfigFlags &= ~ImGuiConfigFlags_DockingEnable;
+    }
+
+    if (m_ImGuiConfig.EnableViewports)
+    {
+        io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+    }
+    else
+    {
+        io.ConfigFlags &= ~ImGuiConfigFlags_ViewportsEnable;
+    }
+}
+
+__declspec(naked) void ImGuiManager::Hook_Render()
+{
+    __asm
+    {
+        pushfd
+        pushad
+
+        mov ecx, offset ModManager::s_Instance.m_ImGuiManager
+        call ImGuiManager::Render
+
+        popad
+        popfd
+
+        // Original code.
+        mov edx, dword ptr [ecx]
+        push esi
+        mov eax, dword ptr [edx + 0x8]
+
+        // Jump back.
+        push 0x0817E446
+        ret
+    }
+}
+
+__declspec(naked) void ImGuiManager::Hook_WindowProc()
+{
+    /*
+        LRESULT __stdcall WindowProc(
+            HWND hWnd,
+            UINT Msg,
+            WPARAM wParam,
+            LPARAM lParam
+        )
+    */
+
+    __asm
+    {
+        // ebp + 0x8: HWND hWnd
+        // ebp + 0xC: UINT Msg
+        // ebp + 0x10: WPARAM wParam
+        // ebp + 0x14: LPARAM lParam
+
+        pushfd
+        pushad
+
+        push dword ptr [ebp + 0x14]
+        push dword ptr [ebp + 0x10]
+        push dword ptr [ebp + 0xC]
+        push dword ptr [ebp + 0x8]
+        mov ecx, offset ModManager::s_Instance.m_ImGuiManager
+        call ImGuiManager::WindowProc
+
+        test al, al
+        jnz _end
+
+        popad
+        popfd
+
+        // Return from the function without processing the message.
+        mov eax, 0
+        mov esp, ebp
+        pop ebp
+        ret 0x10
+
+    _end:
+        popad
+        popfd
+
+        // Original code.
+        push ebx
+        mov ebx, dword ptr [ebp + 0xC]
+        push esi
+
+        // Jump back.
+        push 0x008FB9DE
+        ret
+    }
+}
+
+__declspec(naked) void ImGuiManager::Hook_CaptureKeyboard()
+{
+    __asm
+    {
+        pushfd
+        pushad
+
+        call ImGui::GetIO
+
+        cmp byte ptr [eax]ImGuiIO.WantCaptureKeyboard, 0
+        je _end
+
+        // Make all keys down.
+        mov ecx, 256
+        mov al, 0x00
+        lea edi, [ebp - 0x100]
+        rep stosb
+
+    _end:
+        popad
+        popfd
+
+        // Original code.
+        movss xmm1, ds:[0x00F0A2B4]
+
+        // Jump back.
+        push 0x0664BB31
+        ret
+    }
+}

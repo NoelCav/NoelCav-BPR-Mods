@@ -1,0 +1,8 @@
+<Project>
+  <!-- Lets the solution build with Visual Studio 2022 (v143) although the core-utils and bpr-utils
+       submodules target Visual Studio 2026 (v145). Imported by Microsoft.Cpp.props before it
+       picks the toolset. -->
+  <PropertyGroup>
+    <ForceImportBeforeCppProps>$(MSBuildThisFileDirectory)build\Toolset.props</ForceImportBeforeCppProps>
+  </PropertyGroup>
+</Project>
