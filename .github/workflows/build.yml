@@ -28,7 +28,7 @@ jobs:
         shell: pwsh
         run: ./scripts/package.ps1
 
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v7
         with:
           name: NoelCav-BPR-Mods
           path: dist/*.zip
