@@ -24,7 +24,8 @@ Design notes, known game addresses and what's left to do are in [docs/DESIGN.md]
 
 ## Setup
 
-1. Clone this repository recursively (with submodules).
+1. Clone this repository recursively (with submodules). If a submodule fails with "Filename too long",
+   run `git config --global core.longpaths true` or clone to a shorter path.
 1. Build with Visual Studio 2022 (`v143` toolset), platform `x86`. Build through the solution:
    `msbuild mods.slnx /p:Configuration=Debug /p:Platform=x86`
 
