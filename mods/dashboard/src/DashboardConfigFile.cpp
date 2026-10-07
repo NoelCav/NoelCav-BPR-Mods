@@ -39,7 +39,6 @@ void DashboardConfigFile::Load()
         {
             DashboardGaugeConfig gauge;
             gauge.Enabled = node["Enabled"].as<bool>(gaugeDefaults.Enabled);
-            // OffsetX/OffsetY replaced the old bottom-center X/Y; old values are ignored.
             gauge.OffsetX = node["OffsetX"].as<float>(gaugeDefaults.OffsetX);
             gauge.OffsetY = node["OffsetY"].as<float>(gaugeDefaults.OffsetY);
             return gauge;

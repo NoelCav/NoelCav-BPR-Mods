@@ -1,0 +1,44 @@
+NoelCav-BPR-Mods - Burnout Paradise Remastered (PC) mods
+https://github.com/NoelCav/NoelCav-BPR-Mods
+
+REQUIREMENTS
+  1. Burnout Paradise Remastered for PC (Steam or EA app). Not The Ultimate Box.
+  2. Bo98's BPR Modder, which loads the mods: https://bpr.bo98.uk
+     Install it and launch the game once with it before adding these mods.
+  3. Microsoft Visual C++ Redistributable 2015-2022, x86 (32-bit) version:
+     https://aka.ms/vs/17/release/vc_redist.x86.exe
+     Most PCs already have it. Without it the game shows a "missing DLL" error.
+
+INSTALL
+  1. Close the game.
+  2. Open the game folder (the one with BurnoutPR.exe). On Steam: right-click the game >
+     Manage > Browse local files.
+  3. Extract this zip into that folder, replacing files if asked. You should end up with:
+       BurnoutPR.exe
+       mod-manager.dll        (shared by every mod)
+       imgui.dll              (shared by every mod)
+       mods\<mod>.dll         (one per mod, e.g. mods\teleport.dll)
+  4. Start the game. Press F7 to show or hide the mod menus, F8 for overlays such as the
+     Dashboard. Both keys can be changed in the "Mod Manager" window.
+
+  Each mod zip contains the two shared DLLs, so you can install any combination of mods,
+  in any order. Installing a second mod overwrites them with identical files.
+
+UPDATE
+  Close the game and extract the new zip over the old files.
+
+UNINSTALL
+  One mod:   delete its DLL from the game's "mods" folder (e.g. mods\teleport.dll).
+  All mods:  also delete mod-manager.dll and imgui.dll from the game folder, unless another
+             mod you use needs them (other mods built on matty-ross's mod manager do).
+  Settings:  saved in %LOCALAPPDATA%\Criterion Games\Burnout Paradise Remastered\mods\<mod>\
+             Delete that folder to reset a mod. Your game save is never touched.
+
+TROUBLESHOOTING
+  - Nothing happens on F7: check BPR Modder is installed (dinput8.dll in the game folder) and
+    that the DLLs are in the right folders (above).
+  - "Mod Manager and Mod versions mismatch": another mod pack installed a different
+    mod-manager.dll. Re-extract this zip, or use matching versions.
+  - "MSVCP140.dll / VCRUNTIME140.dll was not found": install the x86 Visual C++ Redistributable.
+
+License: GPLv3 (see LICENSE). Built on matty-ross's bpr-mods-repository.

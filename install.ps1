@@ -12,8 +12,9 @@ for ($i = 0; $i -lt $Configurations.Length; ++$i)
 $Choice = Read-Host -Prompt ">"
 $Configuration = $Configurations[$Choice - 1]
 
-# Every mod is independent: each one is a single DLL (plus an optional "rsc\" assets folder)
-# that needs only the shared mod manager. Pick any combination.
+# Developer install: copies your local build into the game folder. Players should use the
+# release zips instead (see README). Every mod is a single DLL that needs only the shared mod
+# manager, so pick any combination. Close the game first; loaded DLLs are locked.
 $Mods = @(Get-ChildItem -Path ".\mods" -Directory | Where-Object {
     Test-Path -Path (Join-Path -Path $_.FullName -ChildPath "bin\$Configuration\$($_.Name).dll")
 })
@@ -48,17 +49,7 @@ foreach ($ModDirectory in $Mods)
 {
     Copy-Item -Path (Join-Path -Path $ModDirectory.FullName -ChildPath "bin\$Configuration\$($ModDirectory.Name).dll") -Destination $BprModsDirectory
 
-    # Non-DLL assets (textures, fonts) go into a sibling "<mod-name>-assets\" folder so the
-    # mod can find them relative to its own DLL at runtime.
-    $RscDirectory = Join-Path -Path $ModDirectory.FullName -ChildPath "rsc"
-    if (Test-Path -Path $RscDirectory)
-    {
-        $AssetsDestination = Join-Path -Path $BprModsDirectory -ChildPath "$($ModDirectory.Name)-assets"
-        New-Item -ItemType Directory -Path $AssetsDestination -Force | Out-Null
-        Copy-Item -Path "$RscDirectory\*" -Destination $AssetsDestination -Recurse -Force
-    }
-
     Write-Host -Object "Installed $($ModDirectory.Name)."
 }
 
-Write-Host -Object "Installation finished. To remove a mod, delete its DLL (and its -assets folder) from '$BprModsDirectory'."
+Write-Host -Object "Installation finished. To remove a mod, delete its DLL from '$BprModsDirectory'."
