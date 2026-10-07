@@ -1,7 +1,16 @@
 # NoelCav-BPR-Mods — Burnout Paradise Remastered mods
 
 [![Build](https://github.com/NoelCav/NoelCav-BPR-Mods/actions/workflows/build.yml/badge.svg)](https://github.com/NoelCav/NoelCav-BPR-Mods/actions/workflows/build.yml)
-[![Latest release](https://img.shields.io/github/v/release/NoelCav/NoelCav-BPR-Mods)](https://github.com/NoelCav/NoelCav-BPR-Mods/releases/latest)
+
+> [!WARNING]
+> **These mods are built on an unreleased version of matty-ross's mod manager.**
+>
+> They use the work-in-progress mod manager **2.0.0** from the `main` branch of
+> [matty-ross/bpr-mods-repository](https://github.com/matty-ross/bpr-mods-repository). His latest
+> official release is **[v1.4.0](https://github.com/matty-ross/bpr-mods-repository/releases/tag/v1.4.0)**,
+> and the two can't be installed together (see [Compatibility](#compatibility)).
+> **There is no download yet:** a release will follow once a compatible, officially released mod
+> manager is available. Until then the source is here for anyone who wants to build it.
 
 Quality-of-life mods for the PC version of Burnout Paradise Remastered by NoelCav, built on
 [matty-ross's bpr-mods-repository](https://github.com/matty-ross/bpr-mods-repository)
@@ -26,6 +35,10 @@ and its shared mod manager. Every mod is independent: install any combination.
 
 
 ## Install
+
+> [!NOTE]
+> No release has been published yet (see the warning at the top), so the download links below
+> don't work yet. They're the links the first release will use.
 
 1. Download from the [latest release](https://github.com/NoelCav/NoelCav-BPR-Mods/releases/latest):
    - [**All mods**](https://github.com/NoelCav/NoelCav-BPR-Mods/releases/latest/download/NoelCav-BPR-All-Mods.zip), or one at a time:
